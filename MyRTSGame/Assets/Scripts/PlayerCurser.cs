@@ -80,7 +80,12 @@ public class PlayerCurser : MonoBehaviour
     {
         bool deselect = Input.GetKey(KeyCode.LeftShift);
 
-        // Wenn linke Mousetaste gedrückt wir.
+        // Wenn linke oder rechte Mousetaste gedrückt wird.
+        if (Input.GetMouseButtonDown(1))
+        {
+            SingleSelect(deselect);
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
             startMousePosition = Input.mousePosition;
@@ -126,6 +131,11 @@ public class PlayerCurser : MonoBehaviour
             {
                 selectionImage.gameObject.SetActive(false);
             }
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                SingleSelect(deselect);
+            }
         }
     }
 
@@ -135,7 +145,54 @@ public class PlayerCurser : MonoBehaviour
     /// <param name="delete">befinden wir uns im unselect Modus</param>
     public void SingleSelect(bool delete = false)
     {
+        Vector3 clickInput = Input.mousePosition;
+        Ray ray = _camera.ScreenPointToRay(new Vector3(clickInput.x, clickInput.y, _camera.nearClipPlane));
 
+        if(Physics.Raycast(ray, out hit, 1000000000F)) // lieber eine hohe Zahl als Mathf.Infifity
+        {
+            if (hit.collider.GetComponent<IHuman>())
+            {
+                onSelecting = true;
+
+                if (delete)
+                {
+                    if (!selectedGameObjects.Contains(hit.collider.gameObject))
+                    {
+                        hit.collider.GetComponent<IHuman>().isSelected = true;
+                        selectedGameObjects.Add(hit.collider.gameObject);
+                    }
+                    else
+                    {
+                        hit.collider.GetComponent<IHuman>().isSelected = false;
+                        selectedGameObjects.Remove(hit.collider.gameObject);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < selectedGameObjects.Count; i++)
+                    {
+                        selectedGameObjects[i].GetComponent<IHuman>().isSelected = false;
+                    }
+                    selectedGameObjects.Clear();
+
+                    hit.collider.GetComponent<IHuman>().isSelected = true;
+                    selectedGameObjects.Add(hit.collider.gameObject);
+                }
+            }
+            else
+            {
+                if (delete)
+                {
+                    return;
+                }
+                for (int i = 0; i < selectedGameObjects.Count; i++)
+                {
+                    selectedGameObjects[i].GetComponent<IHuman>().isSelected = false;
+                }
+                selectedGameObjects.Clear();
+                onSelecting = false;
+            }
+        }
     }
 
     /// <summary>
